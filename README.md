@@ -9,7 +9,7 @@
 
 后记：单聊、群聊本身可以抽象为一种实现，但是目前官方的demo明显倾向于单聊，群聊无法直接使用。
 #群聊效果#
-![yunxindemo-groupchating](./res_github/smallprogramsmallprogram-yunxindemo-qrcode.jpg)
+![yunxindemo-groupchating](./res_github/neteaseim-groupchating.png)
 
 ## 由于涉及工作项目的代码分离，代码还没有放上来，请耐心等一等 。
 ## 沟通交流请加微信13439975582
