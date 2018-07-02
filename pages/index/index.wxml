@@ -1,0 +1,10 @@
+<!--pages/index/index.wxml-->
+<text>正确的初始化方式</text>
+<text>在app.js初始化云通信通道！不管用户从哪个入口进来，都会初始化云通信！确保了信息能抵达用户！</text>
+<button bindtap='initGroupChating'> 初始化群（服务端固定的）</button>
+<button bindtap='startGroupChating'> 加入群聊约</button>
+<button bindtap='startP2PChating'> 单聊</button>
+
+
+<text>与技术相约，关注【Yuema约吗】公众号</text>
+<image src='/images/qrcode_for_yuema.jpg' mode='FitFill'></image>

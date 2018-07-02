@@ -1,3 +1,5 @@
+import IMEventHandler from '../../utils/imeventhandler.js'
+import MD5 from '../../vendors/md5.js'
 import { calcTimeHeader, clickLogoJumpToCard } from '../../utils/util.js'
 import { iconNoMessage } from '../../utils/imageBase64.js'
 var app = getApp()
@@ -19,178 +21,299 @@ Page({
    * 生命周期函数--监听页面加载
    */
   onLoad: function (options) {
-    // 条目题目展示我的电脑
-    this.setData({
-      loginUserAccount: app.globalData.loginUser.account,
-      iconNoMessage
-    })
-    wx.showLoading({
-      title: '加载中',
-      mask: true
-    })
+    var that = this;
+    let self = that
+    app.initIM(function () {
+      //IM登陆
+      // if (app.globalData.isLogin === false) {
+      //   //app.imlogin({ context: app, token: app.globalData.userinfo.im_token, accid: app.globalData.userinfo.im_accid });
+      //   console.log('===========app.globalData=============');
+      //   console.log(app.globalData);
+      //   console.log('=============app.globalData===========');
+      //   app.globalData.isLogin = true
+      //   setTimeout(() => {
+      //     if (app.globalData.isLogin === true) {
+      //       wx.showToast({
+      //         title: '请检查网络',
+      //         icon: 'none',
+      //         duration: 1500
+      //       })
+      //     }
+      //   }, 15 * 1000);
+      //   console.log('==========app.globalData.userInfo.im_token=============');
+      //   console.log(app.globalData.userInfo.im_token);
+      //   console.log('============app.globalData.userInfo.im_token===========');
 
-    let self = this
-    wx.setNavigationBarTitle({
-      title: '云信',
-    })
-    // 防止排序失败，再次排序
-    for(let i=0; i<5; i++) {
-      setTimeout(() => {
-        self.sortChatList()
-      }, i*1000)
-    }
-    setTimeout(() => {
-      // self.checkRenderChatList()
-      self.sortChatList()
-      wx.hideLoading()
-    }, 6*1000)
-    if (Object.keys(app.globalData.recentChatList).length === 0) {
-      this.setData({
-        chatList: [],
-        chatAccount: {}
+      //   console.log('==========app.globalData.userInfo.im_accid=============');
+      //   console.log(app.globalData.userInfo.im_accid);
+      //   console.log('============app.globalData.userInfo.im_accid===========');
+      //   new IMEventHandler({
+      //     token: app.globalData.userInfo.im_token,
+      //     account: app.globalData.userInfo.im_accid
+      //   })
+      // }
+
+      // 条目题目展示我的电脑
+      // that.setData({
+      //   loginUserAccount: app.globalData.loginUser.account,
+      //   iconNoMessage
+      // })
+      wx.showLoading({
+        title: '加载中',
+        mask: true
       })
-    } 
-    // 监听好友状态列表
-    app.globalData.subscriber.on('FRIEND_STATUS_UPDATE', function (updateAccounts) {
-      setTimeout(() => {
-        let chatList = [...self.data.chatList]
-        for (let onlineAccount in app.globalData.onlineList) {
-          chatList.map(msg => {
-            if (msg.account === onlineAccount) {
-              msg['status'] = app.globalData.onlineList[onlineAccount]
-            }
-          })
-        }
-        self.setData({
-          chatList
-        })
-      }, 2000)
-    })
-    // 删除指定条目
-    app.globalData.subscriber.on('DELETE_RECENT_CHAT_ITEM', function (data) {
-      // console.log(data)
-      let chatList = [...self.data.chatList]
-      let chatAccount = Object.assign({}, self.data.chatAccount)
-      let deleteIndex = null
-      chatList.map((item, index) => {
-        if(item.account === data.account) {
-          deleteIndex = index
-          return
-        }
+
+      wx.setNavigationBarTitle({
+        title: '消息',
       })
-      if (deleteIndex || deleteIndex === 0) {
-        chatList.splice(deleteIndex, 1)
-        delete chatAccount[data.account]
-        self.setData({
-          chatAccount,
-          chatList
-        })
+
+      app.globalData.isMsgTabInit = true;
+      console.log("===========未读数回放===========");
+      console.log(app.globalData.accountUnreadMap);
+      console.log("===========未读数回放===========");
+      //未读数回放
+      for (var k in app.globalData.accountUnreadMap) {
+        app.globalData.subscriber.emit('UPDATE_RECENT_CHAT_UNREAD_ON_SESSION', { account: k, unread: app.globalData.accountUnreadMap[k] })
       }
-    })
-    // 监听添加好友信号（自己操作）
-    app.globalData.subscriber.on('ADD_NEW_FRIEND', function (data) {
-      let msg = { type: 'addFriend', from: data.account || data.from, time: new Date().getTime() }
-      self.addNotificationToChatList(msg)
-      app.globalData.notificationList.push(msg)
-    })
-    // 监听删除好友信号（自己操作）
-    app.globalData.subscriber.on('DELETE_OLD_FRIEND', function (data) {
-      let msg = { type: 'deleteFriend', from: data.account || data.from, time: new Date().getTime() }
-      self.addNotificationToChatList(msg)
-      app.globalData.notificationList.push(msg)
-    })
-    // 监听删除单条通知消息（自己操作）
-    // app.globalData.subscriber.on('DELETE_SINGLE_NOTIFICATION', function (data) {
-    //   console.log(data)
-    // })
-    // 监听删除所有通知消息（自己操作）
-    app.globalData.subscriber.on('DELETE_All_NOTIFICATION', function () {
-      let deleteIndex = 0
-      if (self.data.chatAccount['notification']) {
-        let temp = self.data.chatList
-        delete self.data.chatAccount['notification']
-        temp.map((item, index) => {
-          if(item.account === '消息通知') {
+
+      //历史信息重放
+      console.log('==========历史信息重放=============');
+      console.log(app.globalData);
+      console.log('self.data.chatList.length', self.data.chatList.length)
+      console.log('Object.keys(app.globalData.recentChatList).length', Object.keys(app.globalData.recentChatList).length)
+      if (self.data.chatList.length == 0 && Object.keys(app.globalData.recentChatList).length != 0) {//有数据但是没渲染
+        for (var k in app.globalData.recentChatList) {
+          console.log(k);
+          var chatFlowList = app.globalData.recentChatList[k];
+          var chatFlowArray = []
+          for (var i in chatFlowList) {
+            var formatChatFlow = chatFlowList[i];
+            formatChatFlow.time = i;
+            chatFlowArray.push(formatChatFlow); //属性
+            //arr.push(object[i]); //值
+          }
+          var chatFlow = chatFlowArray[chatFlowArray.length - 1];
+
+          console.log("===========chatFlowList===========");
+          console.log(chatFlowArray);
+          console.log("===========chatFlowList===========");
+          console.log("===========chatFlow===========");
+          console.log(chatFlowArray[chatFlowArray.length - 1]);
+          console.log("===========chatFlow===========");
+          app.globalData.subscriber.emit('UPDATE_RECENT_CHAT_ON_OFFLINE',
+            { account: chatFlow.from == k ? chatFlow.from : chatFlow.to, time: chatFlow.time, text: chatFlow.text, type: chatFlow.type, handler: 'onSessions' })
+
+        }
+      }
+      console.log('============历史信息重放===========');
+
+      // 监听好友状态列表
+      app.globalData.subscriber.on('FRIEND_STATUS_UPDATE', function (updateAccounts) {
+        setTimeout(() => {
+          let chatList = [...self.data.chatList]
+          for (let onlineAccount in app.globalData.onlineList) {
+            chatList.map(msg => {
+              if (msg.account === onlineAccount) {
+                msg['status'] = app.globalData.onlineList[onlineAccount]
+              }
+            })
+          }
+          self.setData({
+            chatList
+          })
+        }, 2000)
+      })
+      // 删除指定条目
+      app.globalData.subscriber.on('DELETE_RECENT_CHAT_ITEM', function (data) {
+        // console.log(data)
+        let chatList = [...self.data.chatList]
+        let chatAccount = Object.assign({}, self.data.chatAccount)
+        let deleteIndex = null
+        chatList.map((item, index) => {
+          if (item.account === data.account) {
             deleteIndex = index
             return
           }
         })
-        temp.splice(deleteIndex, 1)
-        self.setData({
-          chatList: temp
-        })
-      }
-    })
-    //  监听系统消息（他人操作）
-    app.globalData.subscriber.on('RECEIVE_SYSTEM_MESSAGE', function (msg) {
-      // console.log(msg)
-      self.addNotificationToChatList(msg)
-    })
-    // 监听消息未读数
-    // app.globalData.subscriber.on('UPDATE_UNREAD_RECENT_CHAT_ON_OFFLINE', function({account, unread}) {
-    //   console.log(account, unread)
-    //   let chatList = [...self.data.chatList]
-    //   chatList.map(item => {
-    //     if(item.account === account) {
-    //       if(item['unread']) {
-    //         item.unread = parseInt(item.unread) + parseInt(unread)
-    //       } else {
-    //         item.unread = unread
-    //       }
-    //     }
-    //   })
-    //   self.setData({
-    //     chatList
-    //   })
-    // })
-    // 其他端已读消息，本端清空未读数
-    app.globalData.subscriber.on('CLEAR_UNREAD_RECENTCHAT_UPDATESESSION', function ({ account }) {
-      // console.log(account)
-      let chatList = [...self.data.chatList]
-      chatList.map(item => {
-        if (item.account === account) {
-          item.unread = 0
+        if (deleteIndex || deleteIndex === 0) {
+          chatList.splice(deleteIndex, 1)
+          delete chatAccount[data.account]
+          self.setData({
+            chatAccount,
+            chatList
+          })
         }
       })
-      self.setData({
-        chatList
+      // 监听添加好友信号（自己操作）
+      app.globalData.subscriber.on('ADD_NEW_FRIEND', function (data) {
+        let msg = { type: 'addFriend', from: data.account || data.from, time: new Date().getTime() }
+        self.addNotificationToChatList(msg)
+        app.globalData.notificationList.push(msg)
       })
-    })
-    
-    // 初始化时跟新未读数
-    app.globalData.subscriber.on('UPDATE_RECENT_CHAT_UNREAD_ON_SESSION', function ({ account, unread }) {
-      // console.log('UPDATE_RECENT_CHAT_UNREAD_ON_SESSION', account, unread)
-      let accountUnreadMap = Object.assign(self.data.accountUnreadMap)
-      accountUnreadMap[account] = unread
-      self.setData({
-        accountUnreadMap
+      // 监听删除好友信号（自己操作）
+      app.globalData.subscriber.on('DELETE_OLD_FRIEND', function (data) {
+        let msg = { type: 'deleteFriend', from: data.account || data.from, time: new Date().getTime() }
+        self.addNotificationToChatList(msg)
+        app.globalData.notificationList.push(msg)
       })
-    })
-    // 收到消息，刷新最近会话列表
-    app.globalData.subscriber.on('UPDATE_RECENT_CHAT', self.updateRecentChat)
-    app.globalData.subscriber.on('UPDATE_RECENT_CHAT_ON_MSG', self.updateRecentChat)
-    app.globalData.subscriber.on('UPDATE_RECENT_CHAT_ON_SESSION', self.updateRecentChat)
-    app.globalData.subscriber.on('UPDATE_RECENT_CHAT_ON_OFFLINE', self.updateRecentChat)
-    // 转发消息，刷新最近会话列表
-    app.globalData.subscriber.on('UPDATE_RECENT_CHAT_FORWARDCONTACT', self.updateRecentChat)    
+      // 监听删除单条通知消息（自己操作）
+      // app.globalData.subscriber.on('DELETE_SINGLE_NOTIFICATION', function (data) {
+      //   console.log(data)
+      // })
+      // 监听删除所有通知消息（自己操作）
+      app.globalData.subscriber.on('DELETE_All_NOTIFICATION', function () {
+        let deleteIndex = 0
+        if (self.data.chatAccount['notification']) {
+          let temp = self.data.chatList
+          delete self.data.chatAccount['notification']
+          temp.map((item, index) => {
+            if (item.account === '消息通知') {
+              deleteIndex = index
+              return
+            }
+          })
+          temp.splice(deleteIndex, 1)
+          self.setData({
+            chatList: temp
+          })
+        }
+      })
+      //  监听系统消息（他人操作）
+      app.globalData.subscriber.on('RECEIVE_SYSTEM_MESSAGE', function (msg) {
+        // console.log(msg)
+        self.addNotificationToChatList(msg)
+      })
+      // 监听消息未读数
+      // app.globalData.subscriber.on('UPDATE_UNREAD_RECENT_CHAT_ON_OFFLINE', function({account, unread}) {
+      //   console.log(account, unread)
+      //   let chatList = [...self.data.chatList]
+      //   chatList.map(item => {
+      //     if(item.account === account) {
+      //       if(item['unread']) {
+      //         item.unread = parseInt(item.unread) + parseInt(unread)
+      //       } else {
+      //         item.unread = unread
+      //       }
+      //     }
+      //   })
+      //   self.setData({
+      //     chatList
+      //   })
+      // })
+      // 其他端已读消息，本端清空未读数
+      app.globalData.subscriber.on('CLEAR_UNREAD_RECENTCHAT_UPDATESESSION', function ({ account }) {
+        // console.log(account)
+        let chatList = [...self.data.chatList]
+        chatList.map(item => {
+          if (item.account === account) {
+            item.unread = 0
+          }
+        })
+        self.setData({
+          chatList
+        })
+      })
+
+      // 初始化时跟新未读数
+      app.globalData.subscriber.on('UPDATE_RECENT_CHAT_UNREAD_ON_SESSION', function ({ account, unread }) {
+        // console.log('UPDATE_RECENT_CHAT_UNREAD_ON_SESSION', account, unread)
+        let accountUnreadMap = Object.assign(self.data.accountUnreadMap)
+        accountUnreadMap[account] = unread
+        self.setData({
+          accountUnreadMap
+        })
+      })
+      // 收到消息，刷新最近会话列表
+      app.globalData.subscriber.on('UPDATE_RECENT_CHAT', self.updateRecentChat)
+      app.globalData.subscriber.on('UPDATE_RECENT_CHAT_ON_MSG', self.updateRecentChat)
+      app.globalData.subscriber.on('UPDATE_RECENT_CHAT_ON_SESSION', self.updateRecentChat)
+      app.globalData.subscriber.on('UPDATE_RECENT_CHAT_ON_OFFLINE', self.updateRecentChat)
+      // 转发消息，刷新最近会话列表
+      app.globalData.subscriber.on('UPDATE_RECENT_CHAT_FORWARDCONTACT', self.updateRecentChat)
+
+      // 防止排序失败，再次排序
+      for (let i = 0; i < 5; i++) {
+        setTimeout(() => {
+          self.sortChatList()
+        }, i * 1000)
+      }
+      setTimeout(() => {
+        // self.checkRenderChatList()
+        self.sortChatList()
+        wx.hideLoading()
+      }, 6 * 1000)
+      if (Object.keys(app.globalData.recentChatList).length === 0) {
+        that.setData({
+          chatList: [],
+          chatAccount: {}
+        })
+      }
+    });
   },
   /**
    * 显示时排序
    */
   onShow() {
     this.sortChatList()
+    console.log(this.data)
   },
   /**
    * 排序chatlist
    */
   sortChatList() {
-    if (this.data.chatList.length !== 0) {
-      let chatList = [...this.data.chatList]
+    //去重
+    let noRepeatChatList = [...this.data.chatList]
+    let tempMap = {}
+    let deleteIndexArr = []
+    let unread_count = 0
+    noRepeatChatList.map((chat, index) => {
+      if (!tempMap[chat.account]) {
+        tempMap[chat.account] = chat.account
+      } else {
+        deleteIndexArr.push(index)
+      }
+      console.log("============chat=========");
+      console.log(chat);
+      if (chat.unread != undefined) {
+        unread_count += chat.unread
+      }
+      console.log("============chat=========");
+    })
+
+    // deleteIndexArr.map((index) => {
+    //   noRepeatChatList.splice(index, 1)
+    // })
+
+
+    console.log("============unread_count=========");
+    console.log(unread_count);
+    if (unread_count > 0) {
+      wx.showTabBarRedDot({
+        index: 1
+      });
+    } else {
+      wx.hideTabBarRedDot({
+        index: 1
+      });
+    }
+    // console.log("============unread_count=========");
+
+
+    // console.log("============noRepeatChatList=========");
+    // console.log(noRepeatChatList);
+    // console.log("============noRepeatChatList=========");
+    if (noRepeatChatList.length !== 0) {
+      let chatList = [...noRepeatChatList]
       chatList.sort((a, b) => {
         return parseInt(b.timestamp) - parseInt(a.timestamp)
       })
+
+      // console.log("============sortChatList  23=========");
+      // console.log(chatList);
+      // console.log("============sortChatList 2=========");
+
       this.setData({
-        chatList
+        chatList: chatList
       })
     }
   },
@@ -211,7 +334,9 @@ Page({
    * noUpdateUnreadFlag：不更新未读标志，用于己方发送消息
    */
   updateRecentChat({ account, time, text, type, handler }, noUpdateUnreadFlag) {
-    // console.log('updateRecentChat', this.data.chatList)
+    //console.log('updateRecentChat', this.data.chatList)
+    //console.log('app.globalData.onlineList', app.globalData.onlineList)
+
     let self = this
     let status = ''
     // 查找并更新在线状态
@@ -222,45 +347,96 @@ Page({
     }
     if (!self.data.chatAccount[account]) { // 最近会话列表中没有此人
       // 获取头像
-      app.globalData.nim.getUser({
-        account,
-        done: (err, user) => {
-          let avatar = user['avatar'] || self.data.defaultUserLogo
-          let temp = {}
-          let msg = text
-          let unread = 1
-          // 已阅读离线消息不更新
-          switch (handler) {
-            case 'onOfflineMsgs':
+      console.log("======获取头像 account======");
+      console.log(account);
+      console.log("======获取头像 account======");
+      //临时措施
+      if (account.length < 20) {
+        console.log("======team account======");
+        console.log(account);
+        console.log("======team account======");
+        app.globalData.nim.getTeam({
+          teamId: account,
+          done: (err, team) => {
+            let avatar = team['avatar'] || self.data.defaultUserLogo
+            let temp = {}
+            let msg = text
+            let unread = 1
+            // 已阅读离线消息不更新
+            switch (handler) {
+              case 'onOfflineMsgs':
+                unread = 0
+                break
+              case 'onSessions':
+                unread = self.data.accountUnreadMap[account]
+                break
+              default:
+                break
+            }
+            if (noUpdateUnreadFlag) { //己方发送消息，不更新未读数
               unread = 0
-              break
-            case 'onSessions':
-              unread = self.data.accountUnreadMap[account]
-              break
-            default:
-              break
+            }
+            msg = self.judgeMessageType(type)
+            temp[account] = account
+            self.setData({
+              chatList: [{
+                account,
+                status,
+                nick: team['name'],
+                timestamp: time,
+                displayTime: calcTimeHeader(time),
+                lastestMsg: msg || text,
+                type,
+                unread,
+                avatar
+              }, ...self.data.chatList],
+              chatAccount: Object.assign({}, self.data.chatAccount, temp)
+            })
           }
-          if (noUpdateUnreadFlag) { //己方发送消息，不更新未读数
-            unread = 0
+        });
+
+      } else {
+        app.globalData.nim.getUser({
+          account,
+          done: (err, user) => {
+            let avatar = user['avatar'] || self.data.defaultUserLogo
+            let temp = {}
+            let msg = text
+            let unread = 1
+            // 已阅读离线消息不更新
+            switch (handler) {
+              case 'onOfflineMsgs':
+                unread = 0
+                break
+              case 'onSessions':
+                unread = self.data.accountUnreadMap[account]
+                break
+              default:
+                break
+            }
+            if (noUpdateUnreadFlag) { //己方发送消息，不更新未读数
+              unread = 0
+            }
+            msg = self.judgeMessageType(type)
+            temp[account] = account
+            self.setData({
+              chatList: [{
+                account,
+                status,
+                nick: user['nick'],
+                timestamp: time,
+                displayTime: calcTimeHeader(time),
+                lastestMsg: msg || text,
+                type,
+                unread,
+                avatar
+              }, ...self.data.chatList],
+              chatAccount: Object.assign({}, self.data.chatAccount, temp)
+            })
+
           }
-          msg = self.judgeMessageType(type)
-          temp[account] = account
-          self.setData({
-            chatList: [{
-              account,
-              status,
-              nick: user['nick'],
-              timestamp: time,
-              displayTime: calcTimeHeader(time),
-              lastestMsg: msg || text,
-              type,
-              unread,
-              avatar
-            }, ...self.data.chatList],
-            chatAccount: Object.assign({}, self.data.chatAccount, temp)
-          })
-        }
-      })
+        })
+      }
     } else { // 最近会话列表中有此人，更新会话
       let temp = [...self.data.chatList]
       temp.map((message, index) => {
@@ -268,7 +444,7 @@ Page({
           let lastestMsg = ''
           let tempType = ''
           tempType = lastestMsg = self.judgeMessageType(type)
-          
+
           temp[index].lastestMsg = lastestMsg || text
           temp[index].type = tempType || type
           temp[index].timestamp = time
@@ -292,10 +468,9 @@ Page({
       })
     }
 
-    // 排序
-    this.sortChatList()
 
     // 去除重复数据
+    // console.log("=======================");
     // let rawAccounts = Object.keys(this.data.chatAccount)
     // let noRepeatAccounts = [...new Set(rawAccounts)]
     // let noRepeatChatList = [...this.data.chatList]
@@ -316,7 +491,15 @@ Page({
     //   chatList: noRepeatChatList
     // })
     // console.log('updateRecentChat', this.data.chatAccount)
-    // console.log('updateRecentChat', this.data.chatList)
+    // console.log('noRepeatChatList', this.data.chatList)
+
+    // console.log('noRepeatAccounts', noRepeatAccounts)
+    // console.log('noRepeatChatList', noRepeatChatList)
+
+
+    // 排序
+    this.sortChatList()
+
   },
   /**
    * 传递消息进来，添加至最近会话列表
@@ -350,7 +533,7 @@ Page({
         }) // 可能没有content属性
         desc = `自定义系统通知-${str}`
         break
-      default: 
+      default:
         desc = msg.type
         break
     }
@@ -385,23 +568,23 @@ Page({
   /**
    * 捕获从滑动删除传递来的事件
    */
-  catchDeleteTap (e) {
-    let account = e.currentTarget.dataset.data
-    let chatAccount = Object.assign({}, this.data.chatAccount)
-    delete chatAccount[account]
-    let chatList = [...this.data.chatList]
-    let deleteIndex = 0
-    chatList.map((item, index) => {
-      if(item.account === account) {
-        deleteIndex = index
-        return
-      }
-    })
-    chatList.splice(deleteIndex, 1)
-    this.setData({
-      chatList,
-      chatAccount
-    })
+  catchDeleteTap(e) {
+    // let account = e.currentTarget.dataset.data
+    // let chatAccount = Object.assign({}, this.data.chatAccount)
+    // delete chatAccount[account]
+    // let chatList = [...this.data.chatList]
+    // let deleteIndex = 0
+    // chatList.map((item, index) => {
+    //   if(item.account === account) {
+    //     deleteIndex = index
+    //     return
+    //   }
+    // })
+    // chatList.splice(deleteIndex, 1)
+    // this.setData({
+    //   chatList,
+    //   chatAccount
+    // })
   },
   /**
      * 单击消息通知 
@@ -419,26 +602,52 @@ Page({
     let flag = false
     let chatList = [...this.data.chatList]
 
-    // 告知服务器，标记会话已读
-    app.globalData.nim.resetSessionUnread(`p2p-${account}`)
+    //这个是单聊
+    if (account.length > 20) {
+      // 告知服务器，标记会话已读
+      app.globalData.nim.resetSessionUnread(`p2p-${account}`)
 
-    chatList.map(item => {
-      if(item.account === account) {
-        if(item.unread) {
-          item.unread = 0
-          flag = true
+      chatList.map(item => {
+        if (item.account === account) {
+          if (item.unread) {
+            item.unread = 0
+            flag = true
+          }
         }
-      }
-    })
-    if(flag) {
-      this.setData({
-        chatList
       })
+      if (flag) {
+        this.setData({
+          chatList
+        })
+      }
+
+      wx.navigateTo({
+        url: `../../partials/chating/chating?chatTo=${account}`,
+      })
+    } else {
+      //群聊
+      // 告知服务器，标记会话已读
+      app.globalData.nim.resetSessionUnread(`team-${account}`)
+
+      chatList.map(item => {
+        if (item.account === account) {
+          if (item.unread) {
+            item.unread = 0
+            flag = true
+          }
+        }
+      })
+      if (flag) {
+        this.setData({
+          chatList
+        })
+      }
+
+      wx.navigateTo({
+        url: `../../partials/groupchating/groupchating?chatTo=${account}`,
+      })
+
     }
-    
-    wx.navigateTo({
-      url: `../../partials/chating/chating?chatTo=${account}`,
-    })
   },
   /**
    * 单击进入个人区域
@@ -446,7 +655,10 @@ Page({
   switchToPersonCard(e) {
     let account = e.currentTarget.dataset.data
     // 压栈进入account介绍页
-    clickLogoJumpToCard(account, true)
+    //群操作不要响应
+    if (account.length > 20) {
+      clickLogoJumpToCard(account, true)
+    }
   },
   /**
    * 判断消息类型，返回提示

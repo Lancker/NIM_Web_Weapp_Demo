@@ -12,7 +12,7 @@ var envir = 'online',
       url: 'http://preapp.netease.im:8184'
     },
     online: {
-      appkey: '45c6af3c98409b18a84451215d0bdd6e',
+      appkey: '0be5cd4c4c7477da0c2590e050027959',
       url: 'https://app.netease.im'
     }
   };
