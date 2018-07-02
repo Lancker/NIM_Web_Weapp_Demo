@@ -36,6 +36,9 @@ https://dr.netease.im
 https://lbs.netease.im
 https://nim.nos.netease.com
 https://nos.netease.com
+## 群聊服务端说明
+本人项目使用的是PHP，服务端的代码请参考官方的API即可！ 欢迎关注公众号Yuema约吗!
+![qrcode_for_yuema](./res_github/qrcode_for_yuema.jpg)
 ## 官方Demo存在的问题
 - 1.没有与小程序帐号集成。 这个本人在实际项目中已经解决。
 - 2.消息通道初始化问题。 由于官方没有与微信帐号集成，这个初始化问题也是存在的。正确的初始化位置，应当在app.js中完成。目前项目上已经改造好了，除了将初始化移到app.js，还写了一个【消息回放功能】，因为用户进入小程序后，是到首页，消息tab并没有点击，离线的消息与未点消息tab之前的时间窗口消息都需要给消息tab页。现时，app.js中要订阅消息，有消息的要将消息tab打上小红点。
@@ -48,6 +51,9 @@ https://nos.netease.com
 后记：单聊、群聊本身可以抽象为一种实现，但是目前官方的demo明显倾向于单聊，群聊无法直接使用。
 ## 群聊效果
 ![yunxindemo-groupchating](./res_github/neteaseim-groupchating.png)
+![yuema_mp_demo_groupchating](./res_github/yuema_mp_demo_groupchating.png)
+![yuema_mp_demo_index](./res_github/yuema_mp_demo_index.png)
+
 
 ## 由于涉及工作项目的代码分离，代码还没有放上来，请耐心等一等 。
 ## 沟通交流请加微信13439975582
