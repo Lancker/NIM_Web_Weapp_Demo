@@ -1,3 +1,41 @@
+## 群聊功能已上线 2018.07.02
+注：小程序群聊功能上线！后端依据官方的 API创建群即可。
+小程序后台需要配置域名，yuema.zuime.com为本示例用到的。
+PS:由于您没有本示例的开发权限，不保证您能正常跑起本demo.您需要替换一下前端的appid，建议您仔细比较一下官方的代码与本示例的代码，以便明白并理解调整的代码，并能按需优化代码。
+服务器域名
+服务器配置	说明	操作
+request合法域名	
+https://yuema.zuime.com
+https://app.netease.im
+https://dr.netease.im
+https://lbs.netease.im
+https://wlnimsc0.netease.im
+https://wlnimsc1.netease.im
+https://nosdn.127.net
+https://nim.nos.netease.com
+https://nos.netease.com
+https://weblink07.netease.im
+socket合法域名	
+wss://yuema.zuime.com
+wss://app.netease.im
+wss://lbs.netease.im
+wss://dr.netease.im
+wss://wlnimsc0.netease.im
+wss://wlnimsc1.netease.im
+uploadFile合法域名	
+https://yuema.zuime.com
+https://app.netease.im
+https://dr.netease.im
+https://lbs.netease.im
+https://nim.nos.netease.com
+https://nos.netease.com
+downloadFile合法域名	
+https://yuema.zuime.com
+https://app.netease.im
+https://dr.netease.im
+https://lbs.netease.im
+https://nim.nos.netease.com
+https://nos.netease.com
 ## 官方Demo存在的问题
 - 1.没有与小程序帐号集成。 这个本人在实际项目中已经解决。
 - 2.消息通道初始化问题。 由于官方没有与微信帐号集成，这个初始化问题也是存在的。正确的初始化位置，应当在app.js中完成。目前项目上已经改造好了，除了将初始化移到app.js，还写了一个【消息回放功能】，因为用户进入小程序后，是到首页，消息tab并没有点击，离线的消息与未点消息tab之前的时间窗口消息都需要给消息tab页。现时，app.js中要订阅消息，有消息的要将消息tab打上小红点。
