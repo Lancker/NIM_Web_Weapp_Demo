@@ -55,7 +55,7 @@ https://nos.netease.com
 ![yuema_mp_demo_index](./res_github/yuema_mp_demo_index.png)
 
 
-## 由于涉及工作项目的代码分离，代码还没有放上来，请耐心等一等 。
+## 有问题请提出来
 ## 沟通交流请加微信13439975582
 ## 介绍
 
